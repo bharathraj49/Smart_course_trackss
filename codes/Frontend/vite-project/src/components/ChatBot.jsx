@@ -53,7 +53,7 @@ const ChatBot = () => {
         user: user ? { name: user.name, role: user.role } : null,
       };
 
-      const response = await axios.post("http://localhost:5667/api/ai/chat", {
+      const response = await axios.post("https://smart-course-track.onrender.com/api/ai/chat", {
         message: text,
         context: enrichedContext,
         history: history,
