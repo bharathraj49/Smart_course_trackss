@@ -225,17 +225,28 @@ const Analytics = () => {
                           </div>
                         </div>
 
-                        {/* Module time toggle button */}
-                        <button
-                          onClick={() => handleToggleCourse(course.courseId)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all border-2 shrink-0 ${selectedCourseId === course.courseId
-                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
-                            : 'bg-white border-indigo-200 text-indigo-700 hover:border-indigo-500 hover:bg-indigo-50'
-                            }`}
-                        >
-                          <span>⏱️</span>
-                          {selectedCourseId === course.courseId ? 'Hide Module Times' : 'Module Times'}
-                        </button>
+                        <div className="flex gap-2 shrink-0">
+                          {/* Student Details Link */}
+                          <a
+                            href={`/instructor/courses/${course.courseId}/students`}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all border-2 shrink-0 bg-white border-blue-200 text-blue-700 hover:border-blue-500 hover:bg-blue-50"
+                          >
+                            <span>👥</span>
+                            Student Details
+                          </a>
+
+                          {/* Module time toggle button */}
+                          <button
+                            onClick={() => handleToggleCourse(course.courseId)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all border-2 shrink-0 ${selectedCourseId === course.courseId
+                              ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                              : 'bg-white border-indigo-200 text-indigo-700 hover:border-indigo-500 hover:bg-indigo-50'
+                              }`}
+                          >
+                            <span>⏱️</span>
+                            {selectedCourseId === course.courseId ? 'Hide Module Times' : 'Module Times'}
+                          </button>
+                        </div>
                       </div>
 
                       {/* Completion bar */}
@@ -322,20 +333,7 @@ const Analytics = () => {
           </div>
         ) : (
           // Student View
-          <div className="space-y-10">
-            {/* Welcome Banner */}
-            <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 rounded-3xl p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500 opacity-20 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none"></div>
-              <div className="relative z-10">
-                <h2 className="text-3xl md:text-5xl font-black mb-4 tracking-tight">
-                  Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">{user?.name?.split(' ')[0] || 'Student'}</span>! 👋
-                </h2>
-                <p className="text-lg md:text-xl text-indigo-200 max-w-2xl font-medium leading-relaxed">
-                  Ready to continue your learning journey? Check your latest progress and pick up right where you left off.
-                </p>
-              </div>
-            </div>
+          <div className="space-y-8">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl shadow-lg p-6 text-white border border-blue-400 relative overflow-hidden group">
@@ -397,7 +395,7 @@ const Analytics = () => {
                   <p className="text-gray-600">You haven't enrolled in any courses yet</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {enrollments.map(enrollment => {
                     // Pre-calculations for card
                     const totalModules = enrollment.course?.contents?.length || 1;
@@ -414,89 +412,76 @@ const Analytics = () => {
                     const modCerts = Object.values(enrollment.progress?.moduleCertificates || {}).filter(c => c && c.issued).length;
 
                     return (
-                      <div key={enrollment._id} className="relative bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] transition-all duration-500 group overflow-hidden border-2 border-transparent hover:border-blue-100 flex flex-col h-full hover:-translate-y-2">
+                      <div key={enrollment._id} className="relative bg-white rounded-3xl p-6 shadow-md border-2 border-gray-100 hover:shadow-2xl hover:border-blue-300 transition-all duration-300 group overflow-hidden">
 
-                        {/* Thumbnail Header */}
-                        <div className="relative h-56 md:h-64 w-full overflow-hidden shrink-0 bg-gray-900">
-                          <img
-                            src={enrollment.course?.thumbnailUrl || 'https://placehold.co/800x400?text=Course'}
-                            alt={enrollment.course?.title}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
-                            onError={(e) => { e.currentTarget.src = 'https://placehold.co/800x400?text=Course'; }}
-                          />
-                          {/* Dark Overlay for text readability */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent opacity-100"></div>
+                        {/* Status Badge */}
+                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm shadow-sm border border-gray-100 px-3 py-1 rounded-full font-bold text-xs uppercase tracking-wider flex items-center gap-2 z-10">
+                          {enrollment.certificate?.issued ? (
+                            <><span className="text-emerald-500">●</span> <span className="text-emerald-700">Completed</span></>
+                          ) : progressPct > 0 ? (
+                            <><span className="text-blue-500">●</span> <span className="text-blue-700">In Progress</span></>
+                          ) : (
+                            <><span className="text-gray-400">●</span> <span className="text-gray-600">Not Started</span></>
+                          )}
+                        </div>
 
-                          {/* Status Badge (Top Right) */}
-                          <div className="absolute top-5 right-5 bg-black/40 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-wider text-white flex items-center gap-2 shadow-xl z-10 transition-colors">
-                            {enrollment.certificate?.issued ? (
-                              <><span className="text-emerald-400">●</span> <span>Completed</span></>
-                            ) : progressPct > 0 ? (
-                              <><span className="text-blue-400 animate-pulse">●</span> <span>In Progress</span></>
-                            ) : (
-                              <><span className="text-gray-400">●</span> <span>Not Started</span></>
-                            )}
+                        {/* Content */}
+                        <div className="pr-24">
+                          <h3 className="font-black text-gray-900 mb-1 text-xl group-hover:text-blue-600 transition-colors line-clamp-1" title={enrollment.course?.title}>
+                            {enrollment.course?.title}
+                          </h3>
+                          <p className="text-sm text-gray-500 font-medium mb-5">{totalModules} Modules in this course</p>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mb-6 space-y-2 relative z-10">
+                          <div className="flex justify-between items-end">
+                            <span className="text-sm font-bold text-gray-700">Course Progress</span>
+                            <span className="text-xl font-black text-blue-600">{progressPct}%</span>
                           </div>
+                          <div className="w-full bg-gray-100 rounded-full h-3 shadow-inner overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-500 font-medium flex justify-between">
+                            <span>{completedModules} completed</span>
+                            <span>{totalModules - completedModules} remaining</span>
+                          </div>
+                        </div>
 
-                          {/* Title & Progress over Image */}
-                          <div className="absolute bottom-0 left-0 w-full p-6 z-10">
-                            <h3 className="font-black text-white mb-4 text-2xl lg:text-3xl line-clamp-2 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" title={enrollment.course?.title}>
-                              {enrollment.course?.title}
-                            </h3>
-
-                            {/* Glowing Progress Bar */}
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-end">
-                                <span className="text-xs font-bold text-gray-300 uppercase tracking-wider drop-shadow-md">Course Progress</span>
-                                <span className="text-lg font-black text-white drop-shadow-md">{progressPct}%</span>
-                              </div>
-                              <div className="w-full bg-white/20 rounded-full h-2.5 shadow-inner overflow-hidden backdrop-blur-sm">
-                                <div
-                                  className="h-full rounded-full bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(56,189,248,0.8)]"
-                                  style={{ width: `${progressPct}%` }}
-                                />
-                              </div>
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                            <div className="flex items-center gap-2 text-sm text-gray-600 font-bold mb-1 uppercase tracking-wide">
+                              <span>📝</span> Avg Quiz
+                            </div>
+                            <div className="text-2xl font-black text-gray-900">
+                              {avgQuiz !== null ? `${avgQuiz}%` : '--'}
+                            </div>
+                          </div>
+                          <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
+                            <div className="flex items-center gap-2 text-sm text-orange-800 font-bold mb-1 uppercase tracking-wide">
+                              <span>🏆</span> Mod Certs
+                            </div>
+                            <div className="text-2xl font-black text-orange-600">
+                              {modCerts} <span className="text-sm text-orange-400 font-medium">earned</span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Card Body */}
-                        <div className="p-6 md:p-8 flex-1 flex flex-col bg-white">
-                          <div className="flex items-center justify-between mb-8">
-                            <p className="text-sm text-gray-500 font-bold tracking-wide flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                              <span className="text-lg">📚</span> {completedModules} / {totalModules} Modules
-                            </p>
-                          </div>
+                        {/* CTA Button */}
+                        <button
+                          onClick={() => window.location.href = `/course/${enrollment.course?._id}`}
+                          className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-bold text-lg shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 relative z-10 group-hover:-translate-y-1"
+                        >
+                          {progressPct === 0 ? "Start Learning" : progressPct === 100 ? "Review Course" : "Continue Learning"}
+                          <span className="group-hover:translate-x-1 transition-transform">→</span>
+                        </button>
 
-                          {/* Stats Grid */}
-                          <div className="grid grid-cols-2 gap-4 mb-8 mt-auto">
-                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-100 shadow-sm group-hover:border-blue-200 transition-colors">
-                              <div className="flex items-center gap-2 text-xs text-gray-500 font-bold mb-1 uppercase tracking-wider">
-                                <span>📝</span> Avg Quiz
-                              </div>
-                              <div className="text-3xl font-black text-gray-800">
-                                {avgQuiz !== null ? `${avgQuiz}%` : '--'}
-                              </div>
-                            </div>
-                            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-orange-100 shadow-sm group-hover:border-orange-200 transition-colors">
-                              <div className="flex items-center gap-2 text-xs text-orange-800/70 font-bold mb-1 uppercase tracking-wider">
-                                <span>🏆</span> Mod Certs
-                              </div>
-                              <div className="text-3xl font-black text-orange-600 flex items-baseline gap-1.5">
-                                {modCerts} <span className="text-xs text-orange-500 font-black uppercase tracking-wider">earned</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* CTA Button */}
-                          <button
-                            onClick={() => window.location.href = `/course/${enrollment.course?._id}`}
-                            className="w-full py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all flex items-center justify-center gap-3 relative z-10 group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:scale-[1.02]"
-                          >
-                            {progressPct === 0 ? "Start Learning" : progressPct === 100 ? "Review Course" : "Continue Learning"}
-                            <span className="group-hover:translate-x-2 transition-transform">→</span>
-                          </button>
-                        </div>
+                        {/* Decorative Background Blob */}
+                        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-50 rounded-full blur-3xl opacity-50 z-0 pointer-events-none group-hover:bg-indigo-100 transition-colors duration-500" />
                       </div>
                     );
                   })}

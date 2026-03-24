@@ -11,6 +11,14 @@ const enrollmentSchema = new mongoose.Schema({
     completedIndices: { type: [Number], default: [] },
     completedLessons: { type: [String], default: [] }, // Format: "moduleIndex-lessonIndex"
     quizResults: { type: Map, of: new mongoose.Schema({ scorePercent: Number, passed: Boolean, attempts: { type: Number, default: 0 } }, { _id: false }) },
+    moduleCertificates: {
+      type: Map,
+      of: new mongoose.Schema({
+        issued: { type: Boolean, default: false },
+        issuedAt: { type: Date },
+        certificateId: { type: String }
+      }, { _id: false })
+    },
     lastUpdatedAt: { type: Date }
   },
   certificate: {

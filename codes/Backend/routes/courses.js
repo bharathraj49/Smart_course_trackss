@@ -739,13 +739,62 @@ router.post('/:id/students/:userId/certificate', authenticateToken, authorizeRol
 
     await enrollment.save();
 
-    res.json({ message: 'Certificate successfully issued', certificate: enrollment.certificate });
+    res.json({ message: 'Certificate issued successfully', certificateId });
   } catch (e) {
-    console.error('issue certificate error', e);
+    console.error('Issue certificate error:', e);
     res.status(500).json({ message: 'Failed to issue certificate' });
   }
 });
 
+// Issue certificate for a specific enrolled student's module
+router.post('/:id/students/:userId/modules/:moduleIndex/certificate', authenticateToken, authorizeRoles('instructor', 'admin'), async (req, res) => {
+  try {
+    const { id: courseId, userId, moduleIndex } = req.params;
+
+    const course = await Course.findById(courseId);
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+    if (req.user.role !== 'admin' && course.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not allowed' });
+    }
+
+    const enrollment = await Enrollment.findOne({ course: courseId, user: userId });
+    if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
+
+    const mIdx = parseInt(moduleIndex, 10);
+    const completedIndices = enrollment.progress?.completedIndices || [];
+
+    if (!completedIndices.includes(mIdx)) {
+      return res.status(400).json({ message: `Student has not completed module ${mIdx + 1}.` });
+    }
+
+    if (!enrollment.progress.moduleCertificates) {
+      enrollment.progress.moduleCertificates = new Map();
+    }
+
+    if (enrollment.progress.moduleCertificates.has(moduleIndex) && enrollment.progress.moduleCertificates.get(moduleIndex).issued) {
+      return res.status(400).json({ message: 'Module certificate already issued.' });
+    }
+
+    // Generate formal Certificate ID
+    const crypto = require('crypto');
+    const certificateId = `MOD-CERT-${crypto.randomBytes(3).toString('hex').toUpperCase()}-${Date.now().toString().slice(-4)}`;
+
+    enrollment.progress.moduleCertificates.set(moduleIndex, {
+      issued: true,
+      issuedAt: new Date(),
+      certificateId
+    });
+
+    // Mark document as modified for mixed/map types
+    enrollment.markModified('progress.moduleCertificates');
+
+    await enrollment.save();
+
+    res.json({ message: 'Module certificate issued successfully', certificateId });
+  } catch (e) {
+    console.error('Issue module certificate error:', e);
+    res.status(500).json({ message: 'Failed to issue module certificate' });
+  }
+});
+
 module.exports = router;
-
-

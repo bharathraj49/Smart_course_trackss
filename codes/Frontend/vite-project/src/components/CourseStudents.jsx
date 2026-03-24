@@ -145,8 +145,9 @@ const CourseStudents = () => {
                                         return (
                                             <React.Fragment key={enrollment._id}>
                                                 <tr
+                                                    key={enrollment._id}
+                                                    className={`bg-white transition-colors cursor-pointer hover:bg-gray-50 ${expandedStudentId === enrollment._id ? 'border-b-0 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] relative z-10' : 'border-b border-gray-100'}`}
                                                     onClick={() => toggleExpand(enrollment._id)}
-                                                    className={`hover:bg-gray-50 transition-colors cursor-pointer ${expandedStudentId === enrollment._id ? 'bg-indigo-50/50' : ''}`}
                                                 >
                                                     <td className="p-4">
                                                         <div className="font-bold text-gray-900">{enrollment.user?.name || "Unknown"}</div>
