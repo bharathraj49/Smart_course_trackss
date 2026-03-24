@@ -103,15 +103,28 @@ const YouTubePlayer = ({ url, isCompleted, onComplete }) => {
   }
 
   return (
-    <div className="w-full aspect-video rounded-xl overflow-hidden bg-black">
-      <iframe
-        ref={iframeRef}
-        src={embedSrc}
-        className="w-full h-full"
-        title="YouTube video"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
+    <div className="w-full bg-black rounded-xl overflow-hidden flex flex-col">
+      <div className="w-full aspect-video">
+        <iframe
+          ref={iframeRef}
+          src={embedSrc}
+          className="w-full h-full"
+          title="YouTube video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+      {!isCompleted && onComplete && (
+        <div className="p-3 bg-gray-900 border-t border-gray-800 flex justify-end items-center">
+          <span className="text-gray-400 text-xs mr-4 italic">Video not loading or already watched?</span>
+          <button
+            onClick={onComplete}
+            className="text-sm px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <span>▶️</span> Skip & Mark Complete
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -1337,6 +1350,9 @@ const CourseDetail = () => {
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [activeTab, setActiveTab] = useState("content"); // content, code
   const [certificate, setCertificate] = useState(null);
+  const [moduleCertificates, setModuleCertificates] = useState({});
+  const [selectedCert, setSelectedCert] = useState(null);
+  const [selectedModuleCertTitle, setSelectedModuleCertTitle] = useState("");
   const [progress, setProgress] = useState(null);
   const fallbackThumbnail =
     "https://placehold.co/800x450?text=Course+Thumbnail";
@@ -1367,11 +1383,51 @@ const CourseDetail = () => {
     [user?.id, id],
   );
   const saveTimer = useRef(null);
+  // Track time spent on each module
+  const moduleStartTime = useRef(Date.now());
+  const moduleStartIdx = useRef(0);
 
   useEffect(() => {
     setSectionLessonIdx(0);
     setQuizResult(null);
   }, [activeIdx]);
+
+  // --- Module time tracking ---
+  useEffect(() => {
+    if (!isEnrolled || !id) {
+      // Reset timer without reporting when not enrolled
+      moduleStartTime.current = Date.now();
+      moduleStartIdx.current = activeIdx;
+      return;
+    }
+
+    const reportTime = async (idx, startMs) => {
+      const secs = Math.round((Date.now() - startMs) / 1000);
+      if (secs < 2) return; // ignore accidental flickers
+      try {
+        await axios.post(`/courses/${id}/module-time`, { moduleIndex: idx, seconds: secs });
+      } catch {
+        // non-critical, ignore
+      }
+    };
+
+    // Report the previous module's time when switching
+    const prevIdx = moduleStartIdx.current;
+    const prevStart = moduleStartTime.current;
+
+    // Flush previous module (skip on first mount when both are 0)
+    if (prevStart) reportTime(prevIdx, prevStart);
+
+    // Start timer for new module
+    moduleStartTime.current = Date.now();
+    moduleStartIdx.current = activeIdx;
+
+    // Also flush on page unload
+    const handleUnload = () => { reportTime(activeIdx, moduleStartTime.current); };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIdx, isEnrolled, id]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -1466,6 +1522,7 @@ const CourseDetail = () => {
           if (Array.isArray(r.data?.completedIndices)) {
             setCompleted(r.data.completedIndices);
             setCompletedLessons(r.data.completedLessons || []);
+            setModuleCertificates(r.data.moduleCertificates || {});
             localStorage.setItem(
               storageKey,
               JSON.stringify(r.data.completedIndices),
@@ -2203,7 +2260,7 @@ const CourseDetail = () => {
                   <div className="space-y-4">
                     {certificate?.issued ? (
                       <div className="w-full bg-gradient-to-br from-yellow-400 to-amber-600 text-white border-2 border-yellow-200 rounded-2xl px-4 py-4 text-center font-bold text-lg flex flex-col items-center justify-center gap-2 shadow-lg animate-pulse hover:animate-none transition-all cursor-pointer"
-                        onClick={() => setShowCertificateModal(true)}>
+                        onClick={() => { setSelectedCert(certificate); setSelectedModuleCertTitle(""); setShowCertificateModal(true); }}>
                         <div className="flex gap-2 items-center">
                           <span className="text-2xl">🏆</span>
                           <span>View Certificate</span>
@@ -2262,27 +2319,43 @@ const CourseDetail = () => {
                           }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="truncate">{m.title}</span>
-                          <span
-                            className={`text-xs px-3 py-1.5 rounded-full font-bold whitespace-nowrap ml-2 ${st === "passed"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : st === "revision"
-                                ? "bg-amber-100 text-amber-700"
-                                : st === "available"
-                                  ? isActive
-                                    ? "bg-white/20 text-white"
-                                    : "bg-blue-100 text-blue-700"
-                                  : "bg-gray-200 text-gray-600"
-                              }`}
-                          >
-                            {st === "passed"
-                              ? "✓ Done"
-                              : st === "revision"
-                                ? "📖 Study"
-                                : st === "available"
-                                  ? "🔓 Ready"
-                                  : "🔒 Locked"}
-                          </span>
+                          <span className="truncate flex-1">{m.title}</span>
+                          <div className="flex items-center overflow-hidden">
+                            {moduleCertificates[idx.toString()]?.issued && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCert(moduleCertificates[idx.toString()]);
+                                  setSelectedModuleCertTitle(m.title);
+                                  setShowCertificateModal(true);
+                                }}
+                                className="mr-2 text-xs px-2 py-1 bg-gradient-to-r from-yellow-400 to-amber-500 text-white font-bold rounded shadow hover:shadow-md transition-all flex items-center gap-1 flex-shrink-0"
+                                title="View Module Certificate"
+                              >
+                                🏆 Cert
+                              </button>
+                            )}
+                            <span
+                              className={`text-xs px-3 py-1.5 flex-shrink-0 rounded-full font-bold whitespace-nowrap ml-1 ${st === "passed"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : st === "revision"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : st === "available"
+                                    ? isActive
+                                      ? "bg-white/20 text-white"
+                                      : "bg-blue-100 text-blue-700"
+                                    : "bg-gray-200 text-gray-600"
+                                }`}
+                            >
+                              {st === "passed"
+                                ? "✓ Done"
+                                : st === "revision"
+                                  ? "📖 Study"
+                                  : st === "available"
+                                    ? "🔓 Ready"
+                                    : "🔒 Locked"}
+                            </span>
+                          </div>
                         </div>
                       </button>
                       {isActive &&
@@ -2303,9 +2376,10 @@ const CourseDetail = () => {
           <CertificateModal
             isOpen={showCertificateModal}
             onClose={() => setShowCertificateModal(false)}
-            certificate={certificate}
+            certificate={selectedCert}
             course={course}
             studentName={user?.name || "Student"}
+            moduleTitle={selectedModuleCertTitle}
           />
         )}
 
@@ -2315,6 +2389,7 @@ const CourseDetail = () => {
             courseId={id}
             onPassedPreTest={handlePreTestPassed}
             onCancelPreTest={() => setShowPreTest(false)}
+            onSkipPreTest={handlePreTestPassed}
           />
         )}
       </div>

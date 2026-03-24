@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-const CertificateModal = ({ isOpen, onClose, certificate, course, studentName }) => {
+const CertificateModal = ({ isOpen, onClose, certificate, course, studentName, moduleTitle }) => {
     const certificateRef = useRef(null);
     const [downloading, setDownloading] = useState(false);
 
@@ -105,7 +105,11 @@ const CertificateModal = ({ isOpen, onClose, certificate, course, studentName })
                             </h3>
 
                             <p className="text-lg text-[#1f2937] leading-relaxed max-w-[90%]" style={{ fontFamily: "Arial, sans-serif" }}>
-                                has successfully completed the course <span className="font-bold text-[#111827]">{course.title}</span> with dedication, commitment, and excellence.
+                                {moduleTitle ? (
+                                    <>has successfully completed the module <span className="font-bold text-[#111827]">{moduleTitle}</span> in the course <span className="font-bold text-[#111827]">{course.title}</span></>
+                                ) : (
+                                    <>has successfully completed the course <span className="font-bold text-[#111827]">{course.title}</span></>
+                                )} with dedication, commitment, and excellence.
                             </p>
 
                             {/* Details Grid */}

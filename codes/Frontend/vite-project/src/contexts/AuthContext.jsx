@@ -4,7 +4,7 @@ import axios from 'axios';
 const AuthContext = createContext();
 
 // Configure axios defaults
-axios.defaults.baseURL = 'https://smart-course-track.onrender.com/api';
+axios.defaults.baseURL = 'http://localhost:5667/api';
 axios.defaults.withCredentials = false;
 
 // Add token to requests
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const response = await axios.post('/auth/login', { email, password });
       const { token, user: userData } = response.data;
-      
+
       localStorage.setItem('token', token);
       setUser(userData);
       return { success: true };
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const response = await axios.post('/auth/register', userData);
       const { token, user: newUser } = response.data;
-      
+
       localStorage.setItem('token', token);
       setUser(newUser);
       return { success: true };

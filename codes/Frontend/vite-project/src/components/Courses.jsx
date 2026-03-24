@@ -22,7 +22,7 @@ const Courses = () => {
       try {
         const res = await axios.get('/courses');
         const coursesData = res.data || [];
-        
+
         // For each course, if it has pretest, fetch the full pretest data
         const enrichedCourses = await Promise.all(
           coursesData.map(async (course) => {
@@ -38,7 +38,7 @@ const Courses = () => {
             return course;
           })
         );
-        
+
         setCourses(enrichedCourses);
       } catch (error) {
         console.error('Error loading courses:', error);
@@ -59,13 +59,13 @@ const Courses = () => {
     setEnrollLoading(true);
     console.log('Enroll clicked for course:', course);
     console.log('Course has preTest:', !!course.preTest);
-    
+
     try {
       // Fetch the full course details to ensure pretest data is available
       const { data: fullCourse } = await axios.get(`/courses/${course._id}`);
       console.log('Full course data:', fullCourse);
       console.log('Full course preTest:', fullCourse.preTest);
-      
+
       // Always show pre-test gate page for any course
       // This gives user the option to take the pre-test
       setSelectedCourseForPreTest(fullCourse);
@@ -104,7 +104,7 @@ const Courses = () => {
     // Pre-test completed, proceed to payment
     console.log('Pre-test passed with score:', score);
     console.log('Course for payment:', selectedCourseForPreTest);
-    
+
     if (selectedCourseForPreTest) {
       setShowPreTest(false);
       setPreTestGatePage(false);
@@ -117,7 +117,7 @@ const Courses = () => {
   const handleSkipPreTest = async () => {
     // Skip pre-test and go directly to payment
     console.log('Pre-test skipped, proceeding to payment');
-    
+
     if (selectedCourseForPreTest) {
       setShowPreTest(false);
       setPreTestGatePage(false);
@@ -382,6 +382,7 @@ const Courses = () => {
             courseId={selectedCourseForPreTest._id}
             onPassedPreTest={handlePassedPreTest}
             onCancelPreTest={handleCancelPreTest}
+            onSkipPreTest={handleSkipPreTest}
           />
         )}
       </div>

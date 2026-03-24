@@ -53,7 +53,7 @@ const ChatBot = () => {
         user: user ? { name: user.name, role: user.role } : null,
       };
 
-      const response = await axios.post("https://smart-course-track.onrender.com/api/ai/chat", {
+      const response = await axios.post("http://localhost:5667/api/ai/chat", {
         message: text,
         context: enrichedContext,
         history: history,
@@ -157,11 +157,10 @@ const ChatBot = () => {
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`relative max-w-[85%] rounded-lg px-3 py-1.5 text-sm shadow-sm break-words ${
-                    msg.role === "user"
-                      ? "bg-[#E7FFDB] text-gray-900 rounded-tr-none"
-                      : "bg-white text-gray-900 rounded-tl-none"
-                  }`}
+                  className={`relative max-w-[85%] rounded-lg px-3 py-1.5 text-sm shadow-sm break-words ${msg.role === "user"
+                    ? "bg-[#E7FFDB] text-gray-900 rounded-tr-none"
+                    : "bg-white text-gray-900 rounded-tl-none"
+                    }`}
                 >
                   {/* Tail SVG */}
                   {msg.role === "user" ? (

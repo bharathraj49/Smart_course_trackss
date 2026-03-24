@@ -2,6 +2,7 @@ const express = require('express');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const CourseView = require('../models/CourseView');
+const ModuleTime = require('../models/ModuleTime');
 const PreTest = require('../models/PreTest');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
@@ -601,6 +602,74 @@ router.get('/me/analytics', authenticateToken, authorizeRoles('instructor', 'adm
   }
 });
 
+// Student: report time spent on a module
+router.post('/:courseId/module-time', authenticateToken, async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { moduleIndex, seconds } = req.body;
+
+    if (typeof moduleIndex !== 'number' || typeof seconds !== 'number' || seconds <= 0) {
+      return res.status(400).json({ message: 'moduleIndex (number) and seconds (positive number) are required' });
+    }
+
+    // Only active enrollments count
+    const enr = await Enrollment.findOne({ user: req.user._id, course: courseId, status: 'active' });
+    if (!enr) return res.status(403).json({ message: 'Not enrolled' });
+
+    await ModuleTime.findOneAndUpdate(
+      { user: req.user._id, course: courseId, moduleIndex },
+      { $inc: { totalSeconds: seconds, sessions: 1 } },
+      { upsert: true, new: true }
+    );
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('module-time error', e);
+    res.status(500).json({ message: 'Failed to record module time' });
+  }
+});
+
+// Instructor: per-module avg time analytics for a specific course
+router.get('/:courseId/module-analytics', authenticateToken, authorizeRoles('instructor', 'admin'), async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const course = await Course.findById(courseId).select('createdBy contents');
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+    if (req.user.role !== 'admin' && course.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not allowed' });
+    }
+
+    // Aggregate: per module, avg seconds and distinct student count
+    const agg = await ModuleTime.aggregate([
+      { $match: { course: course._id } },
+      {
+        $group: {
+          _id: '$moduleIndex',
+          avgSeconds: { $avg: '$totalSeconds' },
+          studentCount: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Build full list based on course contents (fill zeros for missing modules)
+    const byIdx = {};
+    agg.forEach(a => { byIdx[a._id] = { avgSeconds: Math.round(a.avgSeconds), studentCount: a.studentCount }; });
+
+    const result = course.contents.map((item, idx) => ({
+      moduleIndex: idx,
+      moduleTitle: item.title || `Module ${idx + 1}`,
+      avgSeconds: byIdx[idx]?.avgSeconds ?? 0,
+      studentCount: byIdx[idx]?.studentCount ?? 0
+    }));
+
+    res.json(result);
+  } catch (e) {
+    console.error('module-analytics error', e);
+    res.status(500).json({ message: 'Failed to fetch module analytics' });
+  }
+});
+
 // Fetch all enrolled students for an instructor's course
 router.get('/:id/students', authenticateToken, authorizeRoles('instructor', 'admin'), async (req, res) => {
   try {
@@ -612,9 +681,20 @@ router.get('/:id/students', authenticateToken, authorizeRoles('instructor', 'adm
 
     const enrollments = await Enrollment.find({ course: req.params.id })
       .populate('user', 'name email role')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json(enrollments);
+    const moduleTimes = await ModuleTime.find({ course: req.params.id }).lean();
+
+    const result = enrollments.map(enr => {
+      const userTimes = moduleTimes.filter(mt => mt.user.toString() === enr.user._id.toString());
+      return {
+        ...enr,
+        moduleTimes: userTimes
+      };
+    });
+
+    res.json(result);
   } catch (e) {
     console.error('students fetch error', e);
     res.status(500).json({ message: 'Failed to fetch students' });
