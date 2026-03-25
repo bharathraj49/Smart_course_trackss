@@ -53,7 +53,7 @@ const ChatBot = () => {
         user: user ? { name: user.name, role: user.role } : null,
       };
 
-      const response = await axios.post("https://smart-course-trackss.vercel.app/api/ai/chat", {
+      const response = await axios.post(" https://smart-course-trackss.onrender.com/api/ai/chat", {
         message: text,
         context: enrichedContext,
         history: history,
