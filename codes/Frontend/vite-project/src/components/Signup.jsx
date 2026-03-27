@@ -74,7 +74,7 @@ const Signup = () => {
       <div className="max-w-lg w-full">
         <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border-2 border-gray-200 transition-all duration-300">
           <div className="mb-8 text-center">
-            <div className="text-5xl mb-4">✨</div>
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-3xl shadow-lg mb-6">S</div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Begin Your Journey</h2>
             <p className="mt-3 text-lg text-gray-600">Join thousands of learners worldwide</p>
             <p className="mt-4 text-sm text-gray-600">Already have an account? <Link to="/login" className="font-semibold text-blue-600 hover:text-indigo-600 hover:underline transition-colors">Sign in here</Link></p>
