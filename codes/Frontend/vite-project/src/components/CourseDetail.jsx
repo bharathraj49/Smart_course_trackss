@@ -2236,7 +2236,7 @@ const CourseDetail = () => {
             {/* Enrollment Card - Sticky */}
             <div className="sticky top-8 bg-linear-to-br from-blue-600 to-indigo-600 rounded-3xl p-8 shadow-2xl border-2 border-blue-500 text-white">
               <div className="text-4xl font-black mb-2">
-                ₹{course?.priceInINR}
+                {course?.isFree ? "Free" : `₹${course?.priceInINR}`}
               </div>
               <div className="space-y-3 mb-8">
                 <div className="flex items-center gap-3">
@@ -2280,7 +2280,7 @@ const CourseDetail = () => {
                     disabled={enrolling}
                     className="w-full bg-white hover:bg-gray-100 disabled:opacity-50 text-indigo-600 px-4 py-4 rounded-2xl font-bold text-lg transition-all shadow-lg hover:shadow-xl border-2 border-white"
                   >
-                    {enrolling ? "⏳ Redirecting..." : "→ Enroll Now"}
+                    {enrolling ? "⏳ Redirecting..." : course?.isFree ? "→ Enroll for Free" : "→ Enroll Now"}
                   </button>
                 )
               ) : (

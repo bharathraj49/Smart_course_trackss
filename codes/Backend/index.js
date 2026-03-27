@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5667;
 
 // Middleware
 app.use(cors({
-  origin: "https://smart-course-trackss.vercel.app",
+  origin: process.env.NODE_ENV === 'production' ? "https://smart-course-trackss.vercel.app" : "http://localhost:5173",
   credentials: true
 }));
 app.use(express.json());

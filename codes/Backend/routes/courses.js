@@ -129,9 +129,9 @@ const MIN_PUBLISH_PRICE_INR = 50;
 // Create course (instructor/admin)
 router.post('/', authenticateToken, authorizeRoles('instructor', 'admin'), async (req, res) => {
   try {
-    const { title, description, priceInINR, thumbnailUrl, contents, isPublished, preTest } = req.body;
+    const { title, description, priceInINR, thumbnailUrl, contents, isPublished, preTest, isFree } = req.body;
 
-    if (isPublished && Number(priceInINR) < MIN_PUBLISH_PRICE_INR) {
+    if (isPublished && !isFree && Number(priceInINR) < MIN_PUBLISH_PRICE_INR) {
       return res.status(400).json({ message: `Published courses must be priced at least ₹${MIN_PUBLISH_PRICE_INR}.` });
     }
 
@@ -141,10 +141,11 @@ router.post('/', authenticateToken, authorizeRoles('instructor', 'admin'), async
     const course = await Course.create({
       title,
       description,
-      priceInINR,
+      priceInINR: isFree ? 0 : priceInINR,
       thumbnailUrl,
       contents: contents || [],
       isPublished: !!isPublished,
+      isFree: !!isFree,
       createdBy: req.user._id
     });
 
@@ -178,12 +179,16 @@ router.put('/:id', authenticateToken, authorizeRoles('instructor', 'admin'), asy
       return res.status(403).json({ message: 'Not allowed' });
     }
 
-    const fields = ['title', 'description', 'priceInINR', 'thumbnailUrl', 'contents', 'isPublished'];
+    const fields = ['title', 'description', 'priceInINR', 'thumbnailUrl', 'contents', 'isPublished', 'isFree'];
     fields.forEach(f => {
       if (req.body[f] !== undefined) course[f] = req.body[f];
     });
 
-    if (course.isPublished && Number(course.priceInINR) < MIN_PUBLISH_PRICE_INR) {
+    if (course.isFree) {
+      course.priceInINR = 0;
+    }
+
+    if (course.isPublished && !course.isFree && Number(course.priceInINR) < MIN_PUBLISH_PRICE_INR) {
       return res.status(400).json({ message: `Published courses must be priced at least ₹${MIN_PUBLISH_PRICE_INR}.` });
     }
 

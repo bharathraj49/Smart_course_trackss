@@ -4,7 +4,7 @@ import axios from 'axios';
 const AuthContext = createContext();
 
 // Configure axios defaults
-axios.defaults.baseURL = 'https://smart-course-trackss.onrender.com/api';
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://smart-course-trackss.onrender.com/api';
 axios.defaults.withCredentials = false;
 
 // Add token to requests

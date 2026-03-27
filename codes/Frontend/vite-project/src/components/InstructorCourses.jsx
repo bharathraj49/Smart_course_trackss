@@ -151,8 +151,14 @@ const InstructorCourses = () => {
                       <span>{(c.contents || []).length} modules</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span>₹</span>
-                      <span>{c.priceInINR}</span>
+                      {c.isFree ? (
+                        <span className="font-bold text-emerald-600">Free</span>
+                      ) : (
+                        <>
+                          <span>₹</span>
+                          <span>{c.priceInINR}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <p className="text-gray-600 text-sm mb-4 flex-1 line-clamp-2 h-10">

@@ -20,15 +20,15 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
     const existing = await Enrollment.findOne({ user: req.user._id, course: course._id, status: 'active' });
     if (existing) return res.status(400).json({ message: 'Already enrolled' });
 
-    // Development fallback: no Stripe configured
-    if (!stripeSecret) {
+    // Development fallback or Free course: no Stripe necessary
+    if (!stripeSecret || course.isFree) {
       await Enrollment.findOneAndUpdate(
         { user: req.user._id, course: course._id },
         { status: 'active' },
         { upsert: true, new: true }
       );
-      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-      return res.json({ id: 'dev_enrollment', url: `${clientUrl}/course/${course._id}?enrolled=1` });
+      const clientUrl = process.env.CLIENT_URL || req.headers.origin || 'https://smart-course-trackss.vercel.app';
+      return res.json({ id: course.isFree ? 'free_enrollment' : 'dev_enrollment', url: `${clientUrl}/course/${course._id}?enrolled=1` });
     }
 
     // Enforce minimum charge amount for Stripe
@@ -36,7 +36,7 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
     const normalizedInr = Math.max(inr, MIN_INR);
     const priceInPaise = Math.round(normalizedInr * 100);
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = process.env.CLIENT_URL || req.headers.origin || 'https://smart-course-trackss.vercel.app';
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

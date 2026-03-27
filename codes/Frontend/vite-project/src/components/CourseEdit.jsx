@@ -15,7 +15,8 @@ const CourseEdit = () => {
     description: '',
     priceInINR: 0,
     thumbnailUrl: '',
-    isPublished: false
+    isPublished: false,
+    isFree: false
   });
   const [preTest, setPreTest] = useState({ passMarkPercent: 70, questions: [] });
   const [showPreTestForm, setShowPreTestForm] = useState(false);
@@ -41,7 +42,8 @@ const CourseEdit = () => {
           description: course.description,
           priceInINR: course.priceInINR,
           thumbnailUrl: course.thumbnailUrl || '',
-          isPublished: !!course.isPublished
+          isPublished: !!course.isPublished,
+          isFree: !!course.isFree
         });
 
         // Handle course contents
@@ -431,19 +433,24 @@ const CourseEdit = () => {
 
   const handlePublishToggle = (checked) => {
     setError('');
-    if (checked && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR) {
-      setError(`To publish, set price ≥ ₹${MIN_PUBLISH_PRICE_INR}.`);
+    if (checked && !form.isFree && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR) {
+      setError(`To publish, set price ≥ ₹${MIN_PUBLISH_PRICE_INR} or make the course Free.`);
       setForm({ ...form, isPublished: false });
       return;
     }
     setForm({ ...form, isPublished: checked });
   };
 
+  const handleFreeToggle = (checked) => {
+    setError('');
+    setForm({ ...form, isFree: checked, priceInINR: checked ? 0 : form.priceInINR });
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.isPublished && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR) {
-      setError(`Published courses must be priced at least ₹${MIN_PUBLISH_PRICE_INR}.`);
+    if (form.isPublished && !form.isFree && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR) {
+      setError(`Published courses must be priced at least ₹${MIN_PUBLISH_PRICE_INR} unless marked as Free.`);
       return;
     }
     setSaving(true);
@@ -480,9 +487,10 @@ const CourseEdit = () => {
       const payload = {
         title: form.title,
         description: form.description,
-        priceInINR: form.priceInINR,
+        priceInINR: form.isFree ? 0 : form.priceInINR,
         thumbnailUrl: form.thumbnailUrl,
         isPublished: form.isPublished,
+        isFree: form.isFree,
         contents: processedContents,
         preTest: preTest && preTest.questions && preTest.questions.length > 0 ? {
           passMarkPercent: preTest.passMarkPercent || 70,
@@ -552,12 +560,13 @@ const CourseEdit = () => {
                   <label className="block text-sm font-semibold text-gray-900 mb-2">💰 Price (INR)</label>
                   <input
                     type="number"
-                    className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-600 transition-all"
+                    className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-600 transition-all disabled:bg-gray-100 disabled:text-gray-500"
                     placeholder="Minimum ₹50 for published"
                     value={form.priceInINR}
+                    disabled={form.isFree}
                     onChange={e => setForm({ ...form, priceInINR: Number(e.target.value) })}
                   />
-                  {form.isPublished && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR && (
+                  {form.isPublished && !form.isFree && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR && (
                     <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">⚠️ Price must be ≥ ₹{MIN_PUBLISH_PRICE_INR} to publish.</div>
                   )}
                 </div>
@@ -584,15 +593,26 @@ const CourseEdit = () => {
                 />
               </div>
 
-              <label className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-200 cursor-pointer hover:border-blue-400 transition-all">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 rounded border-2 border-blue-600 cursor-pointer"
-                  checked={form.isPublished}
-                  onChange={e => handlePublishToggle(e.target.checked)}
-                />
-                <span className="font-semibold text-gray-900">Publish this course to make it visible to students</span>
-              </label>
+              <div className="flex flex-col md:flex-row gap-4">
+                <label className="flex-1 inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-200 cursor-pointer hover:border-blue-400 transition-all">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-2 border-blue-600 cursor-pointer"
+                    checked={form.isPublished}
+                    onChange={e => handlePublishToggle(e.target.checked)}
+                  />
+                  <span className="font-semibold text-gray-900">Publish this course to make it visible to students</span>
+                </label>
+                <label className="flex-1 inline-flex items-center gap-3 bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl border-2 border-emerald-200 cursor-pointer hover:border-emerald-400 transition-all">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-2 border-emerald-600 cursor-pointer"
+                    checked={form.isFree}
+                    onChange={e => handleFreeToggle(e.target.checked)}
+                  />
+                  <span className="font-semibold text-gray-900">Make this course free</span>
+                </label>
+              </div>
             </div>
 
             {/* Pre-Test Section */}

@@ -323,7 +323,7 @@ const Courses = () => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold px-3 py-1.5 rounded-lg shadow-lg">
-                    ₹{c.priceInINR}
+                    {c.isFree ? 'Free' : `₹${c.priceInINR}`}
                   </div>
                 </div>
 

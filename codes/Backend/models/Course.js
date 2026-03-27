@@ -81,7 +81,8 @@ const courseSchema = new mongoose.Schema({
   preTest: { type: quizSchema, default: null }, // Course-level pre-test for enrollment gate
   contents: { type: [contentItemSchema], default: [] },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  isPublished: { type: Boolean, default: false }
+  isPublished: { type: Boolean, default: false },
+  isFree: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Course', courseSchema);

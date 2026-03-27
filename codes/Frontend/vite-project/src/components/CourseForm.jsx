@@ -16,6 +16,7 @@ const CourseForm = () => {
     priceInINR: 0,
     thumbnailUrl: "",
     isPublished: false,
+    isFree: false,
   });
   const [preTest, setPreTest] = useState({
     passMarkPercent: 70,
@@ -63,11 +64,11 @@ const CourseForm = () => {
       prev.map((it, i) =>
         i === idx
           ? {
-              quizQuestions: [],
-              passMarkPercent: 70,
-              title: it.title || "Quiz",
-              type: "quiz",
-            }
+            quizQuestions: [],
+            passMarkPercent: 70,
+            title: it.title || "Quiz",
+            type: "quiz",
+          }
           : it,
       ),
     );
@@ -78,12 +79,12 @@ const CourseForm = () => {
       prev.map((it, i) =>
         i === cIdx
           ? {
-              ...it,
-              quizQuestions: [
-                ...(it.quizQuestions || []),
-                { question: "", options: ["", ""], correctIndex: 0 },
-              ],
-            }
+            ...it,
+            quizQuestions: [
+              ...(it.quizQuestions || []),
+              { question: "", options: ["", ""], correctIndex: 0 },
+            ],
+          }
           : it,
       ),
     );
@@ -184,9 +185,9 @@ const CourseForm = () => {
     e.preventDefault();
     setError("");
 
-    if (form.isPublished && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR) {
+    if (form.isPublished && !form.isFree && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR) {
       setError(
-        `Published courses must be priced at least ₹${MIN_PUBLISH_PRICE_INR}.`,
+        `Published courses must be priced at least ₹${MIN_PUBLISH_PRICE_INR} unless marked as Free.`,
       );
       return;
     }
@@ -196,9 +197,10 @@ const CourseForm = () => {
       const payload = {
         title: form.title,
         description: form.description,
-        priceInINR: form.priceInINR,
+        priceInINR: form.isFree ? 0 : form.priceInINR,
         thumbnailUrl: form.thumbnailUrl,
         isPublished: form.isPublished,
+        isFree: form.isFree,
         contents: contents || [],
         preTest:
           preTest && preTest.questions && preTest.questions.length > 0
@@ -230,12 +232,17 @@ const CourseForm = () => {
 
   const handlePublishToggle = (checked) => {
     setError("");
-    if (checked && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR) {
-      setError(`To publish, set price ≥ ₹${MIN_PUBLISH_PRICE_INR}.`);
+    if (checked && !form.isFree && Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR) {
+      setError(`To publish, set price ≥ ₹${MIN_PUBLISH_PRICE_INR} or make the course Free.`);
       setForm({ ...form, isPublished: false });
       return;
     }
     setForm({ ...form, isPublished: checked });
+  };
+
+  const handleFreeToggle = (checked) => {
+    setError("");
+    setForm({ ...form, isFree: checked, priceInINR: checked ? 0 : form.priceInINR });
   };
 
   return (
@@ -282,14 +289,15 @@ const CourseForm = () => {
               </label>
               <input
                 type="number"
-                className="w-full border rounded-xl px-3 py-2"
+                className="w-full border rounded-xl px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500"
                 placeholder="Price (INR)"
                 value={form.priceInINR}
+                disabled={form.isFree}
                 onChange={(e) =>
                   setForm({ ...form, priceInINR: Number(e.target.value) })
                 }
               />
-              {form.isPublished &&
+              {form.isPublished && !form.isFree &&
                 Number(form.priceInINR) < MIN_PUBLISH_PRICE_INR && (
                   <div className="mt-1 text-xs text-red-600">
                     Price must be ≥ ₹{MIN_PUBLISH_PRICE_INR} to publish.
@@ -327,14 +335,24 @@ const CourseForm = () => {
             />
           </div>
 
-          <label className="inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.isPublished}
-              onChange={(e) => handlePublishToggle(e.target.checked)}
-            />
-            <span>Publish</span>
-          </label>
+          <div className="flex gap-6">
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.isPublished}
+                onChange={(e) => handlePublishToggle(e.target.checked)}
+              />
+              <span>Publish</span>
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.isFree}
+                onChange={(e) => handleFreeToggle(e.target.checked)}
+              />
+              <span>Make this course Free</span>
+            </label>
+          </div>
 
           {/* Pre-Test Section */}
           <div className="border-t pt-4 mt-4">
@@ -677,12 +695,12 @@ const CourseForm = () => {
                                 prev.map((it, i) =>
                                   i === idx
                                     ? {
-                                        ...it,
-                                        lessons: [
-                                          ...(it.lessons || []),
-                                          { type: "video", title: "", url: "" },
-                                        ],
-                                      }
+                                      ...it,
+                                      lessons: [
+                                        ...(it.lessons || []),
+                                        { type: "video", title: "", url: "" },
+                                      ],
+                                    }
                                     : it,
                                 ),
                               )
@@ -705,13 +723,13 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            lessons: it.lessons.map((l, j) =>
-                                              j === li
-                                                ? { ...l, type: e.target.value }
-                                                : l,
-                                            ),
-                                          }
+                                          ...it,
+                                          lessons: it.lessons.map((l, j) =>
+                                            j === li
+                                              ? { ...l, type: e.target.value }
+                                              : l,
+                                          ),
+                                        }
                                         : it,
                                     ),
                                   )
@@ -730,16 +748,16 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            lessons: it.lessons.map((l, j) =>
-                                              j === li
-                                                ? {
-                                                    ...l,
-                                                    title: e.target.value,
-                                                  }
-                                                : l,
-                                            ),
-                                          }
+                                          ...it,
+                                          lessons: it.lessons.map((l, j) =>
+                                            j === li
+                                              ? {
+                                                ...l,
+                                                title: e.target.value,
+                                              }
+                                              : l,
+                                          ),
+                                        }
                                         : it,
                                     ),
                                   )
@@ -754,13 +772,13 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            lessons: it.lessons.map((l, j) =>
-                                              j === li
-                                                ? { ...l, url: e.target.value }
-                                                : l,
-                                            ),
-                                          }
+                                          ...it,
+                                          lessons: it.lessons.map((l, j) =>
+                                            j === li
+                                              ? { ...l, url: e.target.value }
+                                              : l,
+                                          ),
+                                        }
                                         : it,
                                     ),
                                   )
@@ -774,11 +792,11 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            lessons: it.lessons.filter(
-                                              (_, j) => j !== li,
-                                            ),
-                                          }
+                                          ...it,
+                                          lessons: it.lessons.filter(
+                                            (_, j) => j !== li,
+                                          ),
+                                        }
                                         : it,
                                     ),
                                   )
@@ -807,14 +825,14 @@ const CourseForm = () => {
                                 prev.map((it, i) =>
                                   i === idx
                                     ? {
-                                        ...it,
-                                        quiz: {
-                                          ...(it.quiz || {}),
-                                          passMarkPercent: Number(
-                                            e.target.value,
-                                          ),
-                                        },
-                                      }
+                                      ...it,
+                                      quiz: {
+                                        ...(it.quiz || {}),
+                                        passMarkPercent: Number(
+                                          e.target.value,
+                                        ),
+                                      },
+                                    }
                                     : it,
                                 ),
                               )
@@ -831,22 +849,22 @@ const CourseForm = () => {
                                 prev.map((it, i) =>
                                   i === idx
                                     ? {
-                                        ...it,
-                                        quiz: {
-                                          ...(it.quiz || {
-                                            passMarkPercent: 70,
-                                            questions: [],
-                                          }),
-                                          questions: [
-                                            ...(it.quiz?.questions || []),
-                                            {
-                                              question: "",
-                                              options: ["", ""],
-                                              correctIndex: 0,
-                                            },
-                                          ],
-                                        },
-                                      }
+                                      ...it,
+                                      quiz: {
+                                        ...(it.quiz || {
+                                          passMarkPercent: 70,
+                                          questions: [],
+                                        }),
+                                        questions: [
+                                          ...(it.quiz?.questions || []),
+                                          {
+                                            question: "",
+                                            options: ["", ""],
+                                            correctIndex: 0,
+                                          },
+                                        ],
+                                      },
+                                    }
                                     : it,
                                 ),
                               )
@@ -869,20 +887,20 @@ const CourseForm = () => {
                                   prev.map((it, i) =>
                                     i === idx
                                       ? {
-                                          ...it,
-                                          quiz: {
-                                            ...(it.quiz || {}),
-                                            questions: it.quiz.questions.map(
-                                              (qq, j) =>
-                                                j === qi
-                                                  ? {
-                                                      ...qq,
-                                                      question: e.target.value,
-                                                    }
-                                                  : qq,
-                                            ),
-                                          },
-                                        }
+                                        ...it,
+                                        quiz: {
+                                          ...(it.quiz || {}),
+                                          questions: it.quiz.questions.map(
+                                            (qq, j) =>
+                                              j === qi
+                                                ? {
+                                                  ...qq,
+                                                  question: e.target.value,
+                                                }
+                                                : qq,
+                                          ),
+                                        },
+                                      }
                                       : it,
                                   ),
                                 )
@@ -903,21 +921,21 @@ const CourseForm = () => {
                                         prev.map((it, i) =>
                                           i === idx
                                             ? {
-                                                ...it,
-                                                quiz: {
-                                                  ...(it.quiz || {}),
-                                                  questions:
-                                                    it.quiz.questions.map(
-                                                      (qq, j) =>
-                                                        j === qi
-                                                          ? {
-                                                              ...qq,
-                                                              correctIndex: oi,
-                                                            }
-                                                          : qq,
-                                                    ),
-                                                },
-                                              }
+                                              ...it,
+                                              quiz: {
+                                                ...(it.quiz || {}),
+                                                questions:
+                                                  it.quiz.questions.map(
+                                                    (qq, j) =>
+                                                      j === qi
+                                                        ? {
+                                                          ...qq,
+                                                          correctIndex: oi,
+                                                        }
+                                                        : qq,
+                                                  ),
+                                              },
+                                            }
                                             : it,
                                         ),
                                       )
@@ -937,28 +955,28 @@ const CourseForm = () => {
                                         prev.map((it, i) =>
                                           i === idx
                                             ? {
-                                                ...it,
-                                                quiz: {
-                                                  ...(it.quiz || {}),
-                                                  questions:
-                                                    it.quiz.questions.map(
-                                                      (qq, j) =>
-                                                        j === qi
-                                                          ? {
-                                                              ...qq,
-                                                              options:
-                                                                qq.options.map(
-                                                                  (op, k) =>
-                                                                    k === oi
-                                                                      ? e.target
-                                                                          .value
-                                                                      : op,
-                                                                ),
-                                                            }
-                                                          : qq,
-                                                    ),
-                                                },
-                                              }
+                                              ...it,
+                                              quiz: {
+                                                ...(it.quiz || {}),
+                                                questions:
+                                                  it.quiz.questions.map(
+                                                    (qq, j) =>
+                                                      j === qi
+                                                        ? {
+                                                          ...qq,
+                                                          options:
+                                                            qq.options.map(
+                                                              (op, k) =>
+                                                                k === oi
+                                                                  ? e.target
+                                                                    .value
+                                                                  : op,
+                                                            ),
+                                                        }
+                                                        : qq,
+                                                  ),
+                                              },
+                                            }
                                             : it,
                                         ),
                                       )
@@ -974,23 +992,23 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            quiz: {
-                                              ...(it.quiz || {}),
-                                              questions: it.quiz.questions.map(
-                                                (qq, j) =>
-                                                  j === qi
-                                                    ? {
-                                                        ...qq,
-                                                        options: [
-                                                          ...qq.options,
-                                                          "",
-                                                        ],
-                                                      }
-                                                    : qq,
-                                              ),
-                                            },
-                                          }
+                                          ...it,
+                                          quiz: {
+                                            ...(it.quiz || {}),
+                                            questions: it.quiz.questions.map(
+                                              (qq, j) =>
+                                                j === qi
+                                                  ? {
+                                                    ...qq,
+                                                    options: [
+                                                      ...qq.options,
+                                                      "",
+                                                    ],
+                                                  }
+                                                  : qq,
+                                            ),
+                                          },
+                                        }
                                         : it,
                                     ),
                                   )
@@ -1008,15 +1026,15 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            quiz: {
-                                              ...(it.quiz || {}),
-                                              questions:
-                                                it.quiz.questions.filter(
-                                                  (_, j) => j !== qi,
-                                                ),
-                                            },
-                                          }
+                                          ...it,
+                                          quiz: {
+                                            ...(it.quiz || {}),
+                                            questions:
+                                              it.quiz.questions.filter(
+                                                (_, j) => j !== qi,
+                                              ),
+                                          },
+                                        }
                                         : it,
                                     ),
                                   )
@@ -1041,12 +1059,12 @@ const CourseForm = () => {
                                 prev.map((it, i) =>
                                   i === idx
                                     ? {
-                                        ...it,
-                                        revisionLessons: [
-                                          ...(it.revisionLessons || []),
-                                          { type: "video", title: "", url: "" },
-                                        ],
-                                      }
+                                      ...it,
+                                      revisionLessons: [
+                                        ...(it.revisionLessons || []),
+                                        { type: "video", title: "", url: "" },
+                                      ],
+                                    }
                                     : it,
                                 ),
                               )
@@ -1069,17 +1087,17 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            revisionLessons:
-                                              it.revisionLessons.map((l, j) =>
-                                                j === ri
-                                                  ? {
-                                                      ...l,
-                                                      type: e.target.value,
-                                                    }
-                                                  : l,
-                                              ),
-                                          }
+                                          ...it,
+                                          revisionLessons:
+                                            it.revisionLessons.map((l, j) =>
+                                              j === ri
+                                                ? {
+                                                  ...l,
+                                                  type: e.target.value,
+                                                }
+                                                : l,
+                                            ),
+                                        }
                                         : it,
                                     ),
                                   )
@@ -1098,17 +1116,17 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            revisionLessons:
-                                              it.revisionLessons.map((l, j) =>
-                                                j === ri
-                                                  ? {
-                                                      ...l,
-                                                      title: e.target.value,
-                                                    }
-                                                  : l,
-                                              ),
-                                          }
+                                          ...it,
+                                          revisionLessons:
+                                            it.revisionLessons.map((l, j) =>
+                                              j === ri
+                                                ? {
+                                                  ...l,
+                                                  title: e.target.value,
+                                                }
+                                                : l,
+                                            ),
+                                        }
                                         : it,
                                     ),
                                   )
@@ -1123,17 +1141,17 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            revisionLessons:
-                                              it.revisionLessons.map((l, j) =>
-                                                j === ri
-                                                  ? {
-                                                      ...l,
-                                                      url: e.target.value,
-                                                    }
-                                                  : l,
-                                              ),
-                                          }
+                                          ...it,
+                                          revisionLessons:
+                                            it.revisionLessons.map((l, j) =>
+                                              j === ri
+                                                ? {
+                                                  ...l,
+                                                  url: e.target.value,
+                                                }
+                                                : l,
+                                            ),
+                                        }
                                         : it,
                                     ),
                                   )
@@ -1147,12 +1165,12 @@ const CourseForm = () => {
                                     prev.map((it, i) =>
                                       i === idx
                                         ? {
-                                            ...it,
-                                            revisionLessons:
-                                              it.revisionLessons.filter(
-                                                (_, j) => j !== ri,
-                                              ),
-                                          }
+                                          ...it,
+                                          revisionLessons:
+                                            it.revisionLessons.filter(
+                                              (_, j) => j !== ri,
+                                            ),
+                                        }
                                         : it,
                                     ),
                                   )
